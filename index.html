@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Opener</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px dashed transparent;
+        }
+
+        .file-input-label:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .drag-over {
+            border-color: #4CAF50 !important;
+            background: #f0f8f0 !important;
+            color: #4CAF50 !important;
+        }
+
+        .file-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .buttons-section {
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .btn.enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-word {
+            background: #1e3a8a;
+            color: white;
+        }
+
+        .btn-word:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4);
+        }
+
+        .btn-google {
+            background: #4285f4;
+            color: white;
+        }
+
+        .btn-google:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+
+        .btn-download {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-download:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+        }
+
+        .error-message {
+            color: #e53e3e;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: #38a169;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Document Opener</h1>
+        
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" class="file-input" accept=".doc,.docx" />
+                <label for="fileInput" class="file-input-label" id="fileLabel">
+                    📁 Choose Document or Drag & Drop
+                </label>
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-size" id="fileSize"></div>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing document...</p>
+            </div>
+        </div>
+
+        <div class="buttons-section">
+            <button class="btn btn-word" id="openWordBtn">
+                📝 Open in Word Online
+            </button>
+            <button class="btn btn-google" id="openGoogleBtn">
+                📊 Open in Google Docs
+            </button>
+            <button class="btn btn-download" id="downloadBtn">
+                ⬇️ Download
+            </button>
+        </div>
+
+        <div class="instructions">
+            <p><strong>Instructions:</strong></p>
+            <p>1. Upload a .doc or .docx file</p>
+            <p>2. Click to open in Word Online or Google Docs</p>
+            <p>3. Files must be publicly accessible for online editors to work</p>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFile = null;
+        let fileURL = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loading = document.getElementById('loading');
+        const openWordBtn = document.getElementById('openWordBtn');
+        const openGoogleBtn = document.getElementById('openGoogleBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop handlers
+        fileLabel.addEventListener('dragover', handleDragOver);
+        fileLabel.addEventListener('dragleave', handleDragLeave);
+        fileLabel.addEventListener('drop', handleDrop);
+
+        // Button click handlers
+        openWordBtn.addEventListener('click', openInWord);
+        openGoogleBtn.addEventListener('click', openInGoogle);
+        downloadBtn.addEventListener('click', downloadFile);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            fileLabel.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            fileLabel.classList.remove('drag-over');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            fileLabel.classList.remove('drag-over');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                fileInput.files = files;
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            // Reset messages
+            hideMessages();
+            
+            // Validate file type
+            if (!file.name.toLowerCase().endsWith('.doc') && !file.name.toLowerCase().endsWith('.docx')) {
+                showError('Please select a .doc or .docx file');
+                return;
+            }
+
+            // Validate file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File size must be less than 10MB');
+                return;
+            }
+
+            uploadedFile = file;
+            
+            // Show loading
+            showLoading();
+            
+            // Create object URL for the file
+            fileURL = URL.createObjectURL(file);
+            
+            // Simulate processing delay
+            setTimeout(() => {
+                hideLoading();
+                displayFileInfo(file);
+                enableButtons();
+                showSuccess('Document uploaded successfully!');
+            }, 1000);
+        }
+
+        function displayFileInfo(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+            fileInfo.classList.add('show');
+        }
+
+        function enableButtons() {
+            openWordBtn.classList.add('enabled');
+            openGoogleBtn.classList.add('enabled');
+            downloadBtn.classList.add('enabled');
+        }
+
+        function openInWord() {
+            if (!fileURL) {
+                showError('Please upload a file first');
+                return;
+            }
+
+            // Note: This creates a blob URL which won't work with Word Online
+            // In a real application, you'd need to upload to a server first
+            showError('Note: Word Online requires a publicly accessible URL. This demo uses a local file URL which won\'t work with Word Online. In a real application, upload the file to your server first.');
+            
+            // For demo purposes, this is how you'd construct the URL:
+            // const wordOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(publicFileUrl)}`;
+            // window.open(wordOnlineUrl, '_blank');
+        }
+
+        function openInGoogle() {
+            if (!fileURL) {
+                showError('Please upload a file first');
+                return;
+            }
+
+            // Note: This creates a blob URL which won't work with Google Docs
+            // In a real application, you'd need to upload to a server first
+            showError('Note: Google Docs requires a publicly accessible URL. This demo uses a local file URL which won\'t work with Google Docs. In a real application, upload the file to your server first.');
+            
+            // For demo purposes, this is how you'd construct the URL:
+            // const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(publicFileUrl)}`;
+            // window.open(googleDocsUrl, '_blank');
+        }
+
+        function downloadFile() {
+            if (!fileURL) {
+                showError('Please upload a file first');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = fileURL;
+            link.download = uploadedFile.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        // Clean up object URLs when page is closed
+        window.addEventListener('beforeunload', () => {
+            if (fileURL) {
+                URL.revokeObjectURL(fileURL);
+            }
+        });
+    </script>
+</body>
+</html>

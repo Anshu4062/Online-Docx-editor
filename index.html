@@ -217,6 +217,15 @@
                 <div class="file-name" id="fileName"></div>
                 <div class="file-size" id="fileSize"></div>
             </div>
+
+            <div style="margin: 20px 0;">
+                <div style="margin-bottom: 10px; font-weight: 600; color: #333;">Or enter a public URL:</div>
+                <input type="url" id="publicUrl" placeholder="https://example.com/document.docx" 
+                       style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;" />
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Try: Imgur, GitHub raw, Catbox.moe, or Dropbox (?dl=1)
+                </div>
+            </div>
             
             <div class="error-message" id="errorMessage"></div>
             <div class="success-message" id="successMessage"></div>
@@ -239,10 +248,14 @@
         </div>
 
         <div class="instructions">
-            <p><strong>Instructions:</strong></p>
-            <p>1. Upload a .doc or .docx file</p>
-            <p>2. Click to open in Word Online or Google Docs</p>
-            <p>3. Files must be publicly accessible for online editors to work</p>
+            <p><strong>How to use:</strong></p>
+            <p>1. Upload a local file OR enter a public URL</p>
+            <p>2. For public URLs, try these free services:</p>
+            <p>• <strong>Imgur.com</strong> - Upload any file, copy direct link</p>
+            <p>• <strong>GitHub</strong> - Upload to repo, use raw.githubusercontent.com link</p>
+            <p>• <strong>Catbox.moe</strong> - Simple file hosting</p>
+            <p>• <strong>Dropbox</strong> - Change ?dl=0 to ?dl=1 in share link</p>
+            <p>3. Click to open in Word Online or Google Docs</p>
         </div>
     </div>
 
@@ -274,6 +287,29 @@
         openWordBtn.addEventListener('click', openInWord);
         openGoogleBtn.addEventListener('click', openInGoogle);
         downloadBtn.addEventListener('click', downloadFile);
+
+        // Add URL input handler
+        const publicUrlInput = document.getElementById('publicUrl');
+        publicUrlInput.addEventListener('input', handleUrlInput);
+
+        function handleUrlInput() {
+            const url = publicUrlInput.value.trim();
+            if (url && isValidDocumentURL(url)) {
+                enableButtons();
+                hideMessages();
+            } else {
+                disableButtons();
+                if (url && !isValidDocumentURL(url)) {
+                    showError('Please enter a valid document URL');
+                }
+            }
+        }
+
+        function disableButtons() {
+            openWordBtn.classList.remove('enabled');
+            openGoogleBtn.classList.remove('enabled');
+            downloadBtn.classList.remove('enabled');
+        }
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -350,33 +386,60 @@
         }
 
         function openInWord() {
-            if (!fileURL) {
-                showError('Please upload a file first');
+            const publicUrl = document.getElementById('publicUrl').value.trim();
+            if (!publicUrl) {
+                showError('Please enter a public URL first');
                 return;
             }
 
-            // Note: This creates a blob URL which won't work with Word Online
-            // In a real application, you'd need to upload to a server first
-            showError('Note: Word Online requires a publicly accessible URL. This demo uses a local file URL which won\'t work with Word Online. In a real application, upload the file to your server first.');
-            
-            // For demo purposes, this is how you'd construct the URL:
-            // const wordOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(publicFileUrl)}`;
-            // window.open(wordOnlineUrl, '_blank');
+            if (!isValidDocumentURL(publicUrl)) {
+                showError('Please enter a valid document URL');
+                return;
+            }
+
+            const wordOnlineUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(publicUrl)}`;
+            window.open(wordOnlineUrl, '_blank');
+            showSuccess('Opening in Word Online...');
         }
 
         function openInGoogle() {
-            if (!fileURL) {
-                showError('Please upload a file first');
+            const publicUrl = document.getElementById('publicUrl').value.trim();
+            if (!publicUrl) {
+                showError('Please enter a public URL first');
                 return;
             }
 
-            // Note: This creates a blob URL which won't work with Google Docs
-            // In a real application, you'd need to upload to a server first
-            showError('Note: Google Docs requires a publicly accessible URL. This demo uses a local file URL which won\'t work with Google Docs. In a real application, upload the file to your server first.');
+            if (!isValidDocumentURL(publicUrl)) {
+                showError('Please enter a valid document URL');
+                return;
+            }
+
+            const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(publicUrl)}`;
+            window.open(googleDocsUrl, '_blank');
+            showSuccess('Opening in Google Docs...');
+        }
+
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return string.startsWith('https://');
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function isValidDocumentURL(url) {
+            if (!isValidURL(url)) return false;
             
-            // For demo purposes, this is how you'd construct the URL:
-            // const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(publicFileUrl)}`;
-            // window.open(googleDocsUrl, '_blank');
+            // Check if it's a GitHub raw URL (these are valid even without extensions)
+            if (url.includes('raw.githubusercontent.com')) return true;
+            
+            // Check if it's from other known hosting services
+            if (url.includes('imgur.com') || url.includes('catbox.moe') || url.includes('dropbox.com')) return true;
+            
+            // Check for document extensions
+            const docExtensions = ['.doc', '.docx', '.pdf', '.ppt', '.pptx', '.xls', '.xlsx'];
+            return docExtensions.some(ext => url.toLowerCase().includes(ext));
         }
 
         function downloadFile() {
